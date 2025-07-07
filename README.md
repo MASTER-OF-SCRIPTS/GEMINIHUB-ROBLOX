@@ -15,6 +15,4 @@ HERE WE GO WITH FIRST SMARTBOT IN ROBLOX BY MASTER OF SCRIPTS!
 - قدرات الرد، المزاح، الغناء، السرد، وأكثر!
 
 ## 🧠 كود التشغيل:
-```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/MASTER-OF-SCRIPTS/GEMINIHUB-ROBLOX/main/GeminiHubMain.lua", true))()
 loadstring(game:HttpGet("https://raw.githubusercontent.com/MASTER-OF-SCRIPTS/GeminiHub/main/GeminiHubMain.lua", true))()
