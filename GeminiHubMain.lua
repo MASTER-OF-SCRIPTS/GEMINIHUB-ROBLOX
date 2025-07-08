@@ -1,26 +1,183 @@
--- 🔷 Gemini Hub Infinite Edition -- Designed and powered by MASTER OF SCRIPTS 🇵🇸 -- GitHub: https://github.com/MASTER-OF-SCRIPTS
 
-if game.CoreGui:FindFirstChild("GeminiHub") then game.CoreGui.GeminiHub:Destroy() end
+-- Designed and Powered by MASTER OF SCRIPTS 👑
+-- Gemini Hub: Ultimate AI Edition (Full GUI, OpenAI API with Encoded Key)
 
-local gui = Instance.new("ScreenGui") gui.Name = "GeminiHub" gui.ResetOnSpawn = false gui.Parent = game.CoreGui
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+local StarterGui = game:GetService("StarterGui")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local main = Instance.new("Frame") main.Size = UDim2.new(0, 350, 0, 420) main.Position = UDim2.new(0.5, -175, 0.5, -210) main.BackgroundColor3 = Color3.fromRGB(30, 30, 30) main.BorderSizePixel = 0 main.Parent = gui
+local memoryFile = "GeminiAI_MemoryData.txt"
+local memoryMode = "super"
+local whitelist = {"MASTER OF SCRIPTS", "ابو سروال"}
+local blacklist = {"guerric", "badadmin123"}
+local stealthMode = false
 
-local title = Instance.new("TextLabel") title.Size = UDim2.new(1, 0, 0, 40) title.BackgroundColor3 = Color3.fromRGB(50, 50, 50) title.Text = "🔷 Gemini Hub - Infinite Edition" title.TextColor3 = Color3.fromRGB(255, 255, 255) title.Font = Enum.Font.SourceSansBold title.TextSize = 18 title.Parent = main
+-- Decode Base64
+local function decodeBase64(str)
+    local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+    str = string.gsub(str, '[^'..b..'=]', '')
+    return (str:gsub('.', function(x)
+        if x == '=' then return '' end
+        local r,f='',(b:find(x)-1)
+        for i=6,1,-1 do r=r..(f%2^i - f%2^(i-1) > 0 and '1' or '0') end
+        return r;
+    end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(x)
+        if #x ~= 8 then return '' end
+        local c=0
+        for i=1,8 do c=c + (x:sub(i,i)=='1' and 2^(8-i) or 0) end
+        return string.char(c)
+    end))
+end
 
-function createButton(text, posY, callback) local btn = Instance.new("TextButton") btn.Size = UDim2.new(0.9, 0, 0, 40) btn.Position = UDim2.new(0.05, 0, 0, posY) btn.Text = text btn.BackgroundColor3 = Color3.fromRGB(70, 70, 70) btn.TextColor3 = Color3.fromRGB(255, 255, 255) btn.Font = Enum.Font.SourceSans btn.TextSize = 16 btn.Parent = main btn.MouseButton1Click:Connect(callback) end
+-- Encrypted API Key
+local ENCODED_API = "c2stcHJvai1VQ1dKU2VGRUI1ckFnU1Z5TzN2SF9qcHIycHlRdU85dHpwVkRNM3VnM3ZMU29haEJIa01xTHRsRXNvMl9GZmM2TkZ6VzBtMWo5QlQzQmxiRkoxS3kzSTRBTjFaenF4LVpnYjNXamROeDd5OWUwMG1WcTh2NndySVVVdkEwdWZKUkRqNE85OTZEdFpFLWUybTFPWFBjMURpX3dB"
+local OPENAI_API_KEY = decodeBase64(ENCODED_API)
 
--- Infinite Knowledge Mode createButton("🌍 Infinite Knowledge Mode", 50, function() local responses = { "هل تعلم أن القمر لا يملك غلافًا جويًا؟", "الماء الساخن يتجمد أسرع من البارد!", "أنت تسأل، وجيميني يجيب دائمًا!", "عدد النجوم يفوق عدد حبات الرمل!" } local fact = responses[math.random(1, #responses)] game.StarterGui:SetCore("ChatMakeSystemMessage", { Text = "[Gemini AI]: " .. fact, Color = Color3.fromRGB(0, 255, 255), Font = Enum.Font.SourceSansBold, FontSize = Enum.FontSize.Size24 }) end)
+-- FE Chat
+local function sendToFEChat(msg)
+    StarterGui:SetCore("ChatMakeSystemMessage", {Text = msg})
+end
 
--- Personality Mode createButton("🧠 Personality Mode", 100, function() local moods = { "🤖 الجاد: لا وقت للضحك، هيا نعمل!", "😈 الشرير: أنا أراقب كل تحركاتك!", "😂 الكوميدي: لماذا لم تعبر الدجاجة الشارع؟", "😎 الغامض: أنا أعرف كل شيء ولا أكشف شيئًا." } local mood = moods[math.random(1, #moods)] game.StarterGui:SetCore("ChatMakeSystemMessage", { Text = "[Gemini Personality]: " .. mood, Color = Color3.fromRGB(255, 200, 0), Font = Enum.Font.SourceSansBold, FontSize = Enum.FontSize.Size24 }) end)
+-- Whitelist / Blacklist check
+local function isAllowed()
+    for _, n in ipairs(blacklist) do if n == LocalPlayer.Name then return false end end
+    for _, n in ipairs(whitelist) do if n == LocalPlayer.Name then return true end end
+    return false
+end
 
--- Random Facts Mode createButton("📚 Random Facts", 150, function() local facts = { "النحل يرقص ليدل على مكان الزهور!", "الحبار العملاق له 3 قلوب!", "القطة ترى في الظلام أفضل من الإنسان بست مرات!", "يبلغ طول الأمعاء الدقيقة 7 أمتار تقريبًا!" } local fact = facts[math.random(1, #facts)] game.StarterGui:SetCore("ChatMakeSystemMessage", { Text = "[Gemini Fact]: " .. fact, Color = Color3.fromRGB(200, 255, 100), Font = Enum.Font.SourceSansBold, FontSize = Enum.FontSize.Size24 }) end)
+-- Admin detection
+local function isAdminPresent()
+    local keywords = {"admin", "hd", "adonis", "panel", "log", "handler"}
+    for _, obj in ipairs(game:GetDescendants()) do
+        for _, word in ipairs(keywords) do
+            if obj.Name:lower():find(word) then return true end
+        end
+    end
+    return false
+end
 
--- Translator Mode (Simulated) createButton("🌍 Language Translator", 200, function() local phrases = { {original = "Hello", arabic = "مرحبًا"}, {original = "Goodbye", arabic = "وداعًا"}, {original = "Friend", arabic = "صديق"}, {original = "Victory", arabic = "نصر"} } local pick = phrases[math.random(1, #phrases)] game.StarterGui:SetCore("ChatMakeSystemMessage", { Text = "[Translator]: '" .. pick.original .. "' ↔️ '" .. pick.arabic .. "'", Color = Color3.fromRGB(150, 150, 255), Font = Enum.Font.SourceSansBold, FontSize = Enum.FontSize.Size24 }) end)
+-- API Request
+local function askChatGPT(prompt)
+    local data = {
+        model = "gpt-3.5-turbo",
+        messages = {{role = "user", content = prompt}}
+    }
+    local headers = {
+        ["Authorization"] = "Bearer " .. OPENAI_API_KEY,
+        ["Content-Type"] = "application/json"
+    }
+    local request = http_request or syn and syn.request or fluxus and fluxus.request
+    if request then
+        local response = request({
+            Url = "https://api.openai.com/v1/chat/completions",
+            Method = "POST",
+            Headers = headers,
+            Body = HttpService:JSONEncode(data)
+        })
+        if response and response.Body then
+            local body = HttpService:JSONDecode(response.Body)
+            return body.choices[1].message.content
+        end
+    end
+    return "❌ فشل الاتصال بـ API."
+end
 
--- Quiz Mode createButton("❓ Quiz Mode", 250, function() local questions = { {q = "كم عدد الكواكب في المجموعة الشمسية؟", a = "8"}, {q = "من أول من نزل على القمر؟", a = "نيل أرمسترونغ"}, {q = "كم عدد ألوان قوس قزح؟", a = "7"}, {q = "أين تقع الأهرامات؟", a = "مصر"}, {q = "ما اسم أطول نهر في العالم؟", a = "الأمازون"} } local q = questions[math.random(1, #questions)] game.StarterGui:SetCore("ChatMakeSystemMessage", { Text = "[Gemini Quiz]: " .. q.q .. " (جاوب في الشات)", Color = Color3.fromRGB(0, 255, 127), Font = Enum.Font.SourceSansBold, FontSize = Enum.FontSize.Size24 }) end)
+-- Memory
+local chatHistory = {}
 
--- Joke Generator createButton("😂 Joke Generator", 300, function() local jokes = { "مرة واحد ذهب يشتري نظارة، قال له البائع: على نظرك!", "واحد بلع ساعة... من وقتها وهو حاسس بالوقت!", "ليش السمكة تخاف من الكمبيوتر؟ لأنه فيه شبكة 😂", "واحد راح يتعلم السباحة... غرق في الكتاب!" } local joke = jokes[math.random(1, #jokes)] game.StarterGui:SetCore("ChatMakeSystemMessage", { Text = "[Gemini Joke]: " .. joke, Color = Color3.fromRGB(255, 150, 0), Font = Enum.Font.SourceSansBold, FontSize = Enum.FontSize.Size24 }) end)
+local function loadMemory()
+    if isfile and readfile and isfile(memoryFile) then
+        local content = readfile(memoryFile)
+        chatHistory = string.split(content, "|")
+    end
+end
 
--- Closing Button createButton("❌ Close Hub", 350, function() gui:Destroy() end)
+local function saveMemory()
+    if writefile then
+        writefile(memoryFile, table.concat(chatHistory, "|"))
+    end
+end
 
+-- Admin stealth
+task.spawn(function()
+    while true do
+        task.wait(10)
+        local detected = isAdminPresent()
+        if detected and not stealthMode then
+            stealthMode = true
+            sendToFEChat("🚫 Gemini AI دخل وضع التخفي")
+        elseif not detected and stealthMode then
+            stealthMode = false
+            sendToFEChat("✅ عاد Gemini AI للعمل")
+        end
+    end
+end)
+
+-- Load Memory and Welcome
+loadMemory()
+if not isAllowed() then sendToFEChat("🚫 لا تملك صلاحية استخدام Gemini AI.") return end
+sendToFEChat("🤖 Gemini AI جاهز!")
+if #chatHistory > 0 then sendToFEChat("🔁 تم تحميل ذاكرتك السابقة.") end
+
+-- GUI Creation
+local gui = Instance.new("ScreenGui", PlayerGui)
+gui.Name = "GeminiAI_GUI"
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 250, 0, 300)
+frame.Position = UDim2.new(0.05, 0, 0.1, 0)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+
+local function createButton(text, posY, callback)
+    local btn = Instance.new("TextButton", frame)
+    btn.Size = UDim2.new(1, -20, 0, 30)
+    btn.Position = UDim2.new(0, 10, 0, posY)
+    btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 14
+    btn.Text = text
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
+createButton("🎭 تغيير الشخصية", 10, function()
+    sendToFEChat("🌀 تم تغيير الشخصية! (هذه ميزة تجريبية)")
+end)
+
+createButton("🧠 تبديل الذاكرة", 50, function()
+    if memoryMode == "super" then
+        memoryMode = "short"
+        sendToFEChat("🔄 الوضع الحالي: ذاكرة قصيرة")
+    elseif memoryMode == "short" then
+        memoryMode = "none"
+        sendToFEChat("💤 تم إيقاف الذاكرة")
+    else
+        memoryMode = "super"
+        sendToFEChat("⚡ ذاكرة خارقة مفعلة!")
+    end
+end)
+
+createButton("👻 وضع التخفي", 90, function()
+    stealthMode = not stealthMode
+    if stealthMode then
+        sendToFEChat("🔕 التخفي مفعّل")
+    else
+        sendToFEChat("🔔 التخفي متوقف")
+    end
+end)
+
+createButton("🔁 إعادة تشغيل الذكاء", 130, function()
+    sendToFEChat("♻️ جاري إعادة التشغيل...")
+    task.wait(1)
+    sendToFEChat("✅ تم!")
+end)
+
+createButton("❌ إغلاق الواجهة", 170, function()
+    gui:Destroy()
+end)
