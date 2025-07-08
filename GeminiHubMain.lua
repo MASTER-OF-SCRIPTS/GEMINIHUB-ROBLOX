@@ -1,127 +1,73 @@
 
 -- Designed and Powered by MASTER OF SCRIPTS 👑
--- Gemini Hub: Ultimate AI Edition (Full GUI, OpenAI API with Encoded Key)
+-- Gemini Hub: OFFLINE AI Edition (Delta-Compatible, Full GUI)
 
 local Players = game:GetService("Players")
-local HttpService = game:GetService("HttpService")
 local StarterGui = game:GetService("StarterGui")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local memoryFile = "GeminiAI_MemoryData.txt"
 local memoryMode = "super"
 local whitelist = {"MASTER OF SCRIPTS", "ابو سروال"}
 local blacklist = {"guerric", "badadmin123"}
 local stealthMode = false
 
--- Decode Base64
-local function decodeBase64(str)
-    local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-    str = string.gsub(str, '[^'..b..'=]', '')
-    return (str:gsub('.', function(x)
-        if x == '=' then return '' end
-        local r,f='',(b:find(x)-1)
-        for i=6,1,-1 do r=r..(f%2^i - f%2^(i-1) > 0 and '1' or '0') end
-        return r;
-    end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(x)
-        if #x ~= 8 then return '' end
-        local c=0
-        for i=1,8 do c=c + (x:sub(i,i)=='1' and 2^(8-i) or 0) end
-        return string.char(c)
-    end))
-end
-
--- Encrypted API Key
-local ENCODED_API = "c2stcHJvai1VQ1dKU2VGRUI1ckFnU1Z5TzN2SF9qcHIycHlRdU85dHpwVkRNM3VnM3ZMU29haEJIa01xTHRsRXNvMl9GZmM2TkZ6VzBtMWo5QlQzQmxiRkoxS3kzSTRBTjFaenF4LVpnYjNXamROeDd5OWUwMG1WcTh2NndySVVVdkEwdWZKUkRqNE85OTZEdFpFLWUybTFPWFBjMURpX3dB"
-local OPENAI_API_KEY = decodeBase64(ENCODED_API)
-
--- FE Chat
+-- FE Chat function
 local function sendToFEChat(msg)
     StarterGui:SetCore("ChatMakeSystemMessage", {Text = msg})
 end
 
--- Whitelist / Blacklist check
+-- Whitelist / Blacklist
 local function isAllowed()
     for _, n in ipairs(blacklist) do if n == LocalPlayer.Name then return false end end
     for _, n in ipairs(whitelist) do if n == LocalPlayer.Name then return true end end
     return false
 end
 
--- Admin detection
+-- Fake AI Response
+local function fakeAIResponse(input)
+    input = input:lower()
+    if input:find("tds") then
+        return "🎯 هيا نلعب Tower Defense Simulator! أنا جاهز للدفاع!"
+    elseif input:find("roleplay") then
+        return "🎭 رائع! دعنا نبدأ التمثيل. من تريد أن أكون؟"
+    elseif input:find("كيفك") or input:find("hello") then
+        return "👋 أنا بخير! كيف يمكنني مساعدتك اليوم؟"
+    elseif input:find("من انت") then
+        return "🤖 أنا Gemini AI، صُنع بواسطة MASTER OF SCRIPTS!"
+    else
+        return "🤔 لم أفهم ذلك تماماً، لكني دائماً أتعلم!"
+    end
+end
+
+-- Admin detection (fake)
 local function isAdminPresent()
-    local keywords = {"admin", "hd", "adonis", "panel", "log", "handler"}
-    for _, obj in ipairs(game:GetDescendants()) do
-        for _, word in ipairs(keywords) do
-            if obj.Name:lower():find(word) then return true end
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr:GetRankInGroup(1200769) >= 200 then
+            return true
         end
     end
     return false
 end
 
--- API Request
-local function askChatGPT(prompt)
-    local data = {
-        model = "gpt-3.5-turbo",
-        messages = {{role = "user", content = prompt}}
-    }
-    local headers = {
-        ["Authorization"] = "Bearer " .. OPENAI_API_KEY,
-        ["Content-Type"] = "application/json"
-    }
-    local request = http_request or syn and syn.request or fluxus and fluxus.request
-    if request then
-        local response = request({
-            Url = "https://api.openai.com/v1/chat/completions",
-            Method = "POST",
-            Headers = headers,
-            Body = HttpService:JSONEncode(data)
-        })
-        if response and response.Body then
-            local body = HttpService:JSONDecode(response.Body)
-            return body.choices[1].message.content
-        end
-    end
-    return "❌ فشل الاتصال بـ API."
-end
-
--- Memory
-local chatHistory = {}
-
-local function loadMemory()
-    if isfile and readfile and isfile(memoryFile) then
-        local content = readfile(memoryFile)
-        chatHistory = string.split(content, "|")
-    end
-end
-
-local function saveMemory()
-    if writefile then
-        writefile(memoryFile, table.concat(chatHistory, "|"))
-    end
-end
-
--- Admin stealth
+-- Stealth mode
 task.spawn(function()
     while true do
         task.wait(10)
-        local detected = isAdminPresent()
-        if detected and not stealthMode then
+        if isAdminPresent() and not stealthMode then
             stealthMode = true
-            sendToFEChat("🚫 Gemini AI دخل وضع التخفي")
-        elseif not detected and stealthMode then
+            sendToFEChat("🚫 دخل الأدمن. تفعيل وضع التخفي!")
+        elseif not isAdminPresent() and stealthMode then
             stealthMode = false
-            sendToFEChat("✅ عاد Gemini AI للعمل")
+            sendToFEChat("✅ عاد Gemini AI للعمل.")
         end
     end
 end)
 
--- Load Memory and Welcome
-loadMemory()
+-- GUI Setup
 if not isAllowed() then sendToFEChat("🚫 لا تملك صلاحية استخدام Gemini AI.") return end
-sendToFEChat("🤖 Gemini AI جاهز!")
-if #chatHistory > 0 then sendToFEChat("🔁 تم تحميل ذاكرتك السابقة.") end
+sendToFEChat("🤖 Gemini AI (Offline) جاهز!")
 
--- GUI Creation
 local gui = Instance.new("ScreenGui", PlayerGui)
 gui.Name = "GeminiAI_GUI"
 
@@ -146,8 +92,10 @@ local function createButton(text, posY, callback)
     return btn
 end
 
-createButton("🎭 تغيير الشخصية", 10, function()
-    sendToFEChat("🌀 تم تغيير الشخصية! (هذه ميزة تجريبية)")
+createButton("🎤 اسأل الذكاء", 10, function()
+    local input = tostring(game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("Chat").Frame.BoxFrame.Frame.ChatBarParentFrame.Frame.Box.Text)
+    local response = fakeAIResponse(input)
+    sendToFEChat("🤖 Gemini: " .. response)
 end)
 
 createButton("🧠 تبديل الذاكرة", 50, function()
@@ -172,10 +120,8 @@ createButton("👻 وضع التخفي", 90, function()
     end
 end)
 
-createButton("🔁 إعادة تشغيل الذكاء", 130, function()
-    sendToFEChat("♻️ جاري إعادة التشغيل...")
-    task.wait(1)
-    sendToFEChat("✅ تم!")
+createButton("🔁 إعادة الذكاء", 130, function()
+    sendToFEChat("♻️ إعادة تمثيل الذكاء... جاهز الآن!")
 end)
 
 createButton("❌ إغلاق الواجهة", 170, function()
